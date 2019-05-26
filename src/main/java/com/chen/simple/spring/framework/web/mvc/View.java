@@ -1,10 +1,9 @@
 package com.chen.simple.spring.framework.web.mvc;
 
-import lombok.SneakyThrows;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -18,6 +17,8 @@ public class View {
 
     public static final String DEFAULT_CONTENT_TYPE = "text/html;charset=utf-8";
 
+    private static Pattern pattern = Pattern.compile("#\\{[^\\}]+\\}", Pattern.CASE_INSENSITIVE);
+
     File viewFile;
 
     public View(File viewFile) {
@@ -29,37 +30,58 @@ public class View {
     }
 
 
-    @SneakyThrows
-    public void render(Map<String, ?> model,
-                       HttpServletRequest request, HttpServletResponse response) {
+    public void render(ModelAndView mv, HttpServletRequest request, HttpServletResponse response) {
+        try {
 
-        StringBuffer sb = new StringBuffer();
-        RandomAccessFile ra = new RandomAccessFile(this.viewFile, "r");
-        String line;
-        while (null != (line = ra.readLine())) {
-            line = new String(line.getBytes("ISO-8859-1"), "utf-8");
-            Pattern pattern = Pattern.compile("¥\\{[^\\}]+\\}", Pattern.CASE_INSENSITIVE);
-            Matcher matcher = pattern.matcher(line);
+            Map<String, Object> model = mv.getModel();
+            StringBuffer sb = new StringBuffer();
+            RandomAccessFile ra = new RandomAccessFile(this.viewFile, "r");
+            String line;
+            while (null != (line = ra.readLine())) {
+                line = new String(line.getBytes("ISO-8859-1"), "utf-8");
 
-            while (matcher.find()) {
-                String paramName = matcher.group();
-                paramName = paramName.replaceAll("¥\\{|\\}", "");
-                Object paramValue = model.get(paramName);
-                if (null == paramValue) {
-                    continue;
+                Matcher matcher = pattern.matcher(line);
+
+                while (matcher.find()) {
+                    String paramName = matcher.group();
+                    paramName = paramName.replaceAll("#\\{|\\}", "");
+                    Object paramValue = model.get(paramName);
+                    if (null == paramValue) {
+                        continue;
+                    }
+                    //要把#{}中间的这个字符串给取出来
+                    line = matcher.replaceFirst(makeStringForRegExp(paramValue.toString()));
+                    matcher = pattern.matcher(line);
                 }
-                //要把¥{}中间的这个字符串给取出来
-                line = matcher.replaceFirst(makeStringForRegExp(paramValue.toString()));
-                matcher = pattern.matcher(line);
+                sb.append(line);
             }
-            sb.append(line);
+            response.setCharacterEncoding("utf-8");
+            response.setContentType(DEFAULT_CONTENT_TYPE);
+            response.getWriter().write(sb.toString());
+            if (mv.getStatus() != null) {
+                response.setStatus(mv.getStatus().value());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
-        response.setCharacterEncoding("utf-8");
-        response.setContentType(DEFAULT_CONTENT_TYPE);
-        response.getWriter().write(sb.toString());
     }
 
     public static String makeStringForRegExp(String str) {
-        return str.replace("\\", "\\\\").replace("*", "\\*").replace("+", "\\+").replace("|", "\\|").replace("{", "\\{").replace("}", "\\}").replace("(", "\\(").replace(")", "\\)").replace("^", "\\^").replace("$", "\\$").replace("[", "\\[").replace("]", "\\]").replace("?", "\\?").replace(",", "\\,").replace(".", "\\.").replace("&", "\\&");
+        return str.replace("\\", "\\\\")
+                .replace("*", "\\*")
+                .replace("+", "\\+")
+                .replace("|", "\\|")
+                .replace("{", "\\{")
+                .replace("}", "\\}")
+                .replace("(", "\\(")
+                .replace(")", "\\)")
+                .replace("^", "\\^")
+                .replace("$", "\\$")
+                .replace("[", "\\[")
+                .replace("]", "\\]")
+                .replace("?", "\\?")
+                .replace(",", "\\,")
+                .replace(".", "\\.")
+                .replace("&", "\\&");
     }
 }

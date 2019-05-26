@@ -1,11 +1,12 @@
 package com.chen.simple.spring.framework.web.servlet;
 
 import com.chen.simple.spring.framework.context.ApplicationContext;
+import com.chen.simple.spring.framework.http.HttpStatus;
 import com.chen.simple.spring.framework.web.mvc.HandlerAdapter;
 import com.chen.simple.spring.framework.web.mvc.ModelAndView;
 import com.chen.simple.spring.framework.web.mvc.RequestMappingHandlerAdapter;
 import com.chen.simple.spring.framework.web.mvc.View;
-import lombok.SneakyThrows;
+import com.google.common.collect.ImmutableMap;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -13,11 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * @author 陈添明
@@ -52,7 +49,7 @@ public class DispatcherServlet extends HttpServlet {
      * @throws IOException
      */
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         doPost(req, resp);
     }
 
@@ -66,32 +63,40 @@ public class DispatcherServlet extends HttpServlet {
      * @throws IOException
      */
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         //6、调用，运行阶段
-        try {
-            doDispatch(req, resp);
-        } catch (Exception e) {
-            e.printStackTrace();
-            resp.getWriter().write("500 Exection,Detail : " + Arrays.toString(e.getStackTrace()));
-        }
+        doDispatch(req, resp);
+
     }
 
-    private void doDispatch(HttpServletRequest req, HttpServletResponse resp) throws IOException, InvocationTargetException, IllegalAccessException {
+    private void doDispatch(HttpServletRequest req, HttpServletResponse resp) {
+        ModelAndView mv;
         HandlerExecutionChain mappedHandler = getHandler(req);
         // 如果handler为空,则返回404
-        if (mappedHandler == null) {
+        if (mappedHandler.getHandler() == null) {
+            mv = new ModelAndView("404", HttpStatus.NOT_FOUND);
+            processDispatchResult(req, resp, mv);
             return;
         }
-        // 获取处理request的处理器适配器handler adapter
-        HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
-        // 实际的处理器处理请求,返回结果视图对象
-        ModelAndView mv = ha.handle(req, resp, mappedHandler.getHandler());
-        // 处理结果
-        processDispatchResult(req, resp, mappedHandler, mv);
+        try {
+            // 获取处理request的处理器适配器handler adapter
+            HandlerAdapter ha = getHandlerAdapter(mappedHandler.getHandler());
+            // 实际的处理器处理请求,返回结果视图对象
+            mv = ha.handle(req, resp, mappedHandler.getHandler());
+            // 处理结果
+        } catch (Exception e) {
+            // 统一异常处理
+            e.printStackTrace();
+            System.out.println(Arrays.toString(e.getStackTrace()).replaceAll("\\[|\\]", ""));
+            mv = new ModelAndView("500", ImmutableMap.of("detail", e.getCause().getMessage(),
+                    "stackTrace", Arrays.toString(e.getStackTrace()).replaceAll("\\[|\\]", "")),
+                    HttpStatus.INTERNAL_SERVER_ERROR);
+            e.printStackTrace();
+        }
+        processDispatchResult(req, resp, mv);
     }
 
-    @SneakyThrows
-    private void processDispatchResult(HttpServletRequest req, HttpServletResponse resp, HandlerExecutionChain mappedHandler, ModelAndView mv) {
+    private void processDispatchResult(HttpServletRequest req, HttpServletResponse resp, ModelAndView mv) {
         if (null == mv) {
             return;
         }
@@ -100,18 +105,22 @@ public class DispatcherServlet extends HttpServlet {
         }
         String viewName = mv.getViewName();
         View view = resolveViewName(viewName, mv.getModelInternal(), req);
-        view.render(mv.getModelInternal(), req, resp);
+        view.render(mv, req, resp);
     }
 
-    @SneakyThrows
+
     private View resolveViewName(String viewName, Map<String, Object> modelInternal, HttpServletRequest req) {
-        if (this.viewResolvers != null) {
-            for (ViewResolver viewResolver : this.viewResolvers) {
-                View view = viewResolver.resolveViewName(viewName);
-                if (view != null) {
-                    return view;
+        try {
+            if (this.viewResolvers != null) {
+                for (ViewResolver viewResolver : this.viewResolvers) {
+                    View view = viewResolver.resolveViewName(viewName);
+                    if (view != null) {
+                        return view;
+                    }
                 }
             }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return null;
     }

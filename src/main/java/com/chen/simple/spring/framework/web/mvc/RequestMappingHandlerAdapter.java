@@ -1,12 +1,18 @@
 package com.chen.simple.spring.framework.web.mvc;
 
+import com.chen.simple.spring.framework.web.method.HandlerMethodReturnValueHandler;
+import com.chen.simple.spring.framework.web.method.ModelAndViewContainer;
+import com.chen.simple.spring.framework.web.method.ModelAndViewMethodReturnValueHandler;
+import com.chen.simple.spring.framework.web.method.RequestResponseBodyMethodProcessor;
 import com.chen.simple.spring.framework.web.servlet.HandlerMethod;
 import com.chen.simple.spring.framework.web.servlet.Param;
 import com.google.common.base.Joiner;
-import lombok.SneakyThrows;
+import com.google.common.collect.ImmutableList;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +23,11 @@ import java.util.Map;
  */
 public class RequestMappingHandlerAdapter implements HandlerAdapter {
 
+    /**
+     * 方法返回值处理器
+     * 源码是实例化bean的时候注入进去的，这里简单处理
+     */
+    private List<HandlerMethodReturnValueHandler> returnValueHandlers = ImmutableList.of(new ModelAndViewMethodReturnValueHandler(), new RequestResponseBodyMethodProcessor());
 
     @Override
     public boolean supports(Object handler) {
@@ -27,12 +38,12 @@ public class RequestMappingHandlerAdapter implements HandlerAdapter {
     }
 
     @Override
-    public ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler) {
+    public ModelAndView handle(HttpServletRequest request, HttpServletResponse response, Object handler) throws InvocationTargetException, IllegalAccessException, IOException {
         return handleInternal(request, response, (HandlerMethod) handler);
     }
 
-    @SneakyThrows
-    private ModelAndView handleInternal(HttpServletRequest request, HttpServletResponse response, HandlerMethod handler) {
+
+    private ModelAndView handleInternal(HttpServletRequest request, HttpServletResponse response, HandlerMethod handler) throws InvocationTargetException, IllegalAccessException, IOException {
         Map<String, String[]> parameterMap = request.getParameterMap();
         List<Param> paramList = handler.getParamList();
         Object[] args = new Object[paramList.size()];
@@ -43,7 +54,7 @@ public class RequestMappingHandlerAdapter implements HandlerAdapter {
             if (type == HttpServletRequest.class) {
                 value = request;
 
-            }else if (type == HttpServletResponse.class) {
+            } else if (type == HttpServletResponse.class) {
                 value = response;
             } else {
                 String[] strArray = parameterMap.get(param.getName());
@@ -51,21 +62,58 @@ public class RequestMappingHandlerAdapter implements HandlerAdapter {
             }
             args[param.getIndex()] = value;
         });
-
         Method method = handler.getMethod();
         Object controller = handler.getController();
+        // 反射调用
         Object result = method.invoke(controller, args);
+        ModelAndViewContainer mavContainer = new ModelAndViewContainer();
+        handleReturnValueObject(result, method, mavContainer, response);
+        return getModelAndView(mavContainer);
+    }
 
-        if(result == null){ return null; }
-        if (method.getReturnType() == ModelAndView.class) {
-            return (ModelAndView) result;
+
+    /**
+     * 获取ModelAndView
+     * @param mavContainer
+     * @return
+     */
+    private ModelAndView getModelAndView(ModelAndViewContainer mavContainer){
+        if (mavContainer.isRequestHandled()) {
+            return null;
+        }
+        ModelAndView mav = new ModelAndView(mavContainer.getView(), mavContainer.getModel(), mavContainer.getStatus());
+        return mav;
+    }
+
+    /**
+     * 处理返回值
+     */
+    public void handleReturnValueObject(Object returnValue, Method handlerMethod, ModelAndViewContainer mavContainer, HttpServletResponse response) throws IOException {
+        HandlerMethodReturnValueHandler handler = selectHandler(handlerMethod);
+        if (handler == null) {
+            throw new IllegalArgumentException("Unknown return value type: " + handlerMethod.getReturnType().getTypeName());
+        }
+        handler.handleReturnValue(returnValue, handlerMethod, mavContainer, response);
+    }
+
+    /**
+     * 选择返回值处理器
+     * @return
+     */
+    private HandlerMethodReturnValueHandler selectHandler(Method handlerMethod) {
+        for (HandlerMethodReturnValueHandler handler : this.returnValueHandlers) {
+            if (handler.supportsReturnType(handlerMethod)) {
+                return handler;
+            }
         }
         return null;
+
     }
 
 
     /**
      * 将字符串数组转换成给定的类型
+     *
      * @param strArray
      * @param type
      */

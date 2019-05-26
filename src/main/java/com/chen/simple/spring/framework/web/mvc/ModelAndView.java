@@ -1,5 +1,6 @@
 package com.chen.simple.spring.framework.web.mvc;
 
+import com.chen.simple.spring.framework.http.HttpStatus;
 import lombok.Data;
 
 import java.util.Map;
@@ -15,6 +16,22 @@ public class ModelAndView {
 
     /** Model Map */
     private Map<String, Object> model;
+
+    private HttpStatus status;
+
+    public ModelAndView(Object view, HttpStatus httpStatus) {
+        this(view, null, httpStatus);
+    }
+
+    public ModelAndView(Object view, Map<String, Object> model) {
+        this(view, model, HttpStatus.OK);
+    }
+
+    public ModelAndView(Object view, Map<String, Object> model, HttpStatus status) {
+        this.view = view;
+        this.model = model;
+        this.status = status;
+    }
 
     /**
      * Set a view name for this ModelAndView, to be resolved by the

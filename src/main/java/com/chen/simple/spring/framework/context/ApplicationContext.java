@@ -3,11 +3,10 @@ package com.chen.simple.spring.framework.context;
 import com.chen.simple.spring.framework.annotation.Autowired;
 import com.chen.simple.spring.framework.beans.BeanDefinition;
 import com.chen.simple.spring.framework.beans.BeanWrapper;
-import com.chen.simple.spring.framework.beans.factory.DefaultListableBeanFactory;
 import com.chen.simple.spring.framework.beans.DefinitionReader;
+import com.chen.simple.spring.framework.beans.factory.DefaultListableBeanFactory;
 import com.chen.simple.spring.framework.beans.factory.ObjectFactory;
 import com.chen.simple.spring.framework.beans.factory.config.Scope;
-import lombok.SneakyThrows;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.reflect.ConstructorUtils;
 import org.apache.commons.lang3.reflect.FieldUtils;
@@ -15,6 +14,7 @@ import strman.Strman;
 
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
@@ -51,12 +51,12 @@ public class  ApplicationContext extends AbstractApplicationContext {
 
     @Override
     public int getBeanDefinitionCount() {
-        return 0;
+        return beanFactory.getBeanDefinitionCount();
     }
 
     @Override
     public String[] getBeanDefinitionNames() {
-        return new String[0];
+        return beanFactory.getBeanDefinitionNames();
     }
 
     /**
@@ -138,33 +138,53 @@ public class  ApplicationContext extends AbstractApplicationContext {
         BeanWrapper instanceWrapper = createBeanInstance(beanName, mbd);
         final Object bean = instanceWrapper.getWrappedInstance();
         //向容器中缓存单例模式的Bean对象，以防循环引用
-        singletonObjects.put(beanName, bean);
+        if (mbd.isSingleton()) {
+            singletonObjects.put(beanName, bean);
+            // 别名也存一份
+            List<String> alias = mbd.getAlias();
+            if (alias != null) {
+                for (String alia : alias) {
+                    singletonObjects.put(alia, bean);
+                }
+            }
+
+        }
+
         //将Bean实例对象封装，并且Bean定义中配置的属性值赋值给实例对象
         populateBean(beanName, mbd, instanceWrapper);
         return bean;
     }
 
-    @SneakyThrows
+
     private void populateBean(String beanName, BeanDefinition mbd, BeanWrapper instanceWrapper) {
-        Class<?> wrappedClass = instanceWrapper.getWrappedClass();
-        Field[] fields = FieldUtils.getFieldsWithAnnotation(wrappedClass, Autowired.class);
-        if (ArrayUtils.isEmpty(fields)) {
-            return;
-        }
-        for (Field field : fields) {
-            String simpleName = field.getType().getSimpleName();
-            Object bean = getBean(Strman.lowerFirst(simpleName));
-            FieldUtils.writeField(field, instanceWrapper.getWrappedInstance(), bean, true);
+        try {
+            Class<?> wrappedClass = instanceWrapper.getWrappedClass();
+            Field[] fields = FieldUtils.getFieldsWithAnnotation(wrappedClass, Autowired.class);
+            if (ArrayUtils.isEmpty(fields)) {
+                return;
+            }
+            for (Field field : fields) {
+                Class<?> fieldType = field.getType();
+                Object bean = getBean(fieldType);
+                FieldUtils.writeField(field, instanceWrapper.getWrappedInstance(), bean, true);
+            }
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
         }
 
     }
 
-    @SneakyThrows
+
     private BeanWrapper createBeanInstance(String beanName, BeanDefinition mbd) {
-        String beanClassName = mbd.getBeanClassName();
-        Class<?> clz = Class.forName(beanClassName);
-        Object instance = ConstructorUtils.invokeConstructor(clz, clz);
-        BeanWrapper beanWrapper = new BeanWrapper(instance);
+        BeanWrapper beanWrapper = null;
+        try {
+            String beanClassName = mbd.getBeanClassName();
+            Class<?> clz = Class.forName(beanClassName);
+            Object instance = ConstructorUtils.invokeConstructor(clz);
+            beanWrapper = new BeanWrapper(instance);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         return beanWrapper;
     }
 
