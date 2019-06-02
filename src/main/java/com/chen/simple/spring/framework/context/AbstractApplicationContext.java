@@ -1,10 +1,7 @@
 package com.chen.simple.spring.framework.context;
 
 import com.chen.simple.spring.framework.beans.factory.BeanFactory;
-import com.chen.simple.spring.framework.beans.factory.config.BeanPostProcessor;
-
-import java.util.ArrayList;
-import java.util.List;
+import com.chen.simple.spring.framework.beans.factory.DefaultListableBeanFactory;
 
 /**
  * @author 陈添明
@@ -12,11 +9,25 @@ import java.util.List;
  */
 public abstract class AbstractApplicationContext implements BeanFactory {
 
-    /** BeanPostProcessors to apply in createBean */
-    private final List<BeanPostProcessor> beanPostProcessors = new ArrayList<>();
 
 
-    public abstract void refresh();
+    public void refresh() {
+
+        // 告诉子类启动refreshBeanFactory()方法，Bean定义资源文件的载入从
+        //子类的refreshBeanFactory()方法启动
+        DefaultListableBeanFactory  beanFactory = obtainFreshBeanFactory();
+
+        // Register bean processors that intercept bean creation.
+        //6、为BeanFactory注册BeanPost事件处理器.
+        //BeanPostProcessor是Bean后置处理器，用于监听容器触发的事件
+        registerBeanPostProcessors(beanFactory);
+
+    }
+
+    protected abstract void registerBeanPostProcessors(DefaultListableBeanFactory beanFactory);
+
+    protected abstract DefaultListableBeanFactory obtainFreshBeanFactory();
+
 
 
     public abstract int getBeanDefinitionCount();
@@ -24,15 +35,5 @@ public abstract class AbstractApplicationContext implements BeanFactory {
 
     public abstract String[] getBeanDefinitionNames();
 
-    public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
 
-    }
-
-    /**
-     * Return the list of BeanPostProcessors that will get applied
-     * to beans created with this factory.
-     */
-    public List<BeanPostProcessor> getBeanPostProcessors() {
-        return this.beanPostProcessors;
-    }
 }

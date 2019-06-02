@@ -16,6 +16,8 @@ public class AdvisedSupport implements Advice {
 
     private List<Class<?>> interfaces = new ArrayList<>();
 
+    private  List<Object> specificInterceptors = new ArrayList<>();
+
     private Object target;
 
 
@@ -25,6 +27,6 @@ public class AdvisedSupport implements Advice {
 
 
     public List<Object> getInterceptorsAndDynamicInterceptionAdvice(Method method, Class<?> targetClass) {
-        return null;
+        return specificInterceptors;
     }
 }

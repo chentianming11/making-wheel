@@ -32,6 +32,7 @@ public class MyController {
     @RequestMapping("/query")
     public ModelAndView query(HttpServletRequest request, HttpServletResponse response,
                               @RequestParam("name") String name) {
+
         System.out.println(request);
         System.out.println(response);
         Map<String, Object> map = queryService.query(name);
