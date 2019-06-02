@@ -6,6 +6,9 @@ package com.chen.simple.spring.framework.beans.factory;
  */
 public interface BeanFactory {
 
+    //如果需要得到工厂本身，需要转义
+    String FACTORY_BEAN_PREFIX = "&";
+
     /**
      * 根据bean的名字，获取在IOC容器中得到bean实例
      * @param name

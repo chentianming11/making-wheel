@@ -27,7 +27,14 @@ public class BeanDefinition {
 
     private List<String> alias;
 
+    /**
+     * this bean definition is 'synthetic', that is,
+     * not defined by the application itself.
+     */
+    private boolean synthetic = false;
+
     private String scope = SCOPE_DEFAULT;
+    private String initMethodName;
 
     public boolean isSingleton() {
         return SCOPE_SINGLETON.equals(scope) || SCOPE_DEFAULT.equals(scope);
@@ -35,5 +42,9 @@ public class BeanDefinition {
 
     public boolean isPrototype() {
         return SCOPE_PROTOTYPE.equals(scope);
+    }
+
+    public String getInitMethodName() {
+        return initMethodName;
     }
 }

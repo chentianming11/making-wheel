@@ -5,4 +5,6 @@ package com.chen.simple.spring.framework.beans;
  * @date 2019/5/12
  */
 public interface FactoryBean {
+
+
 }
