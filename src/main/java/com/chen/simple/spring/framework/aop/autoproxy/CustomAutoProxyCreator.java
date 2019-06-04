@@ -7,14 +7,14 @@ import com.chen.simple.spring.framework.aop.advice.AfterReturningAdvice;
 import com.chen.simple.spring.framework.aop.advice.MethodBeforeAdvice;
 import com.chen.simple.spring.framework.beans.FactoryBean;
 import com.chen.simple.spring.framework.beans.factory.BeanFactory;
-import com.chen.simple.spring.framework.beans.factory.config.BeanPostProcessor;
+import com.chen.simple.spring.framework.beans.factory.config.SmartInstantiationAwareBeanPostProcessor;
+import lombok.SneakyThrows;
 import org.apache.commons.lang3.ClassUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,9 +22,13 @@ import java.util.regex.Pattern;
  * @author 陈添明
  * @date 2019/6/1
  */
-public class CustomAutoProxyCreator implements BeanPostProcessor{
+public class CustomAutoProxyCreator implements SmartInstantiationAwareBeanPostProcessor {
 
     private Properties config;
+
+    private final Set<Object> earlyProxyReferences = Collections.newSetFromMap(new ConcurrentHashMap<>(16));
+
+    private final Map<Object, Boolean> advisedBeans = new ConcurrentHashMap<>(256);
 
     public CustomAutoProxyCreator(Properties config) {
         this.config = config;
@@ -39,37 +43,51 @@ public class CustomAutoProxyCreator implements BeanPostProcessor{
     @Override
     public Object postProcessAfterInitialization(Object bean, String beanName) {
         if (bean != null) {
-            return wrapIfNecessary(bean, beanName);
+            Object cacheKey = getCacheKey(bean.getClass(), beanName);
+            if (!this.earlyProxyReferences.contains(cacheKey)) {
+                return wrapIfNecessary(bean, beanName, cacheKey);
+            }
         }
         return bean;
+    }
+
+    @Override
+    public Object getEarlyBeanReference(Object bean, String beanName) {
+        Object cacheKey = getCacheKey(bean.getClass(), beanName);
+        if (!this.earlyProxyReferences.contains(cacheKey)) {
+            this.earlyProxyReferences.add(cacheKey);
+        }
+        return wrapIfNecessary(bean, beanName, cacheKey);
+    }
+
+    protected Object wrapIfNecessary(Object bean, String beanName, Object cacheKey) {
+
+        // 判断是否不应该代理这个bean
+        if (Boolean.FALSE.equals(this.advisedBeans.get(cacheKey))) {
+            return bean;
+        }
+
+        // Create proxy if we have advice.
+        // 获取这个 bean 的 advice
+        List<Object> specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, bean);
+        if (specificInterceptors != null) {
+            this.advisedBeans.put(cacheKey, Boolean.TRUE);
+            // // 创建代理
+            Object proxy = createProxy(bean.getClass(), beanName, specificInterceptors, bean);
+            return proxy;
+        }
+        this.advisedBeans.put(cacheKey, Boolean.FALSE);
+        return bean;
+
     }
 
     protected Object getCacheKey(Class<?> beanClass, String beanName) {
-        if (!StringUtils.isNotBlank(beanName)) {
+        if (StringUtils.isNotBlank(beanName)) {
             return (FactoryBean.class.isAssignableFrom(beanClass) ?
                     BeanFactory.FACTORY_BEAN_PREFIX + beanName : beanName);
-        }
-        else {
+        } else {
             return beanClass;
         }
-    }
-
-    protected Object wrapIfNecessary(Object bean, String beanName) {
-        // Create proxy if we have advice.
-        // 获取这个 bean 的 advice
-        try {
-            List<Object> specificInterceptors = getAdvicesAndAdvisorsForBean(bean.getClass(), beanName, bean);
-            if (specificInterceptors != null) {
-                // // 创建代理
-                Object proxy = createProxy(bean.getClass(), beanName, specificInterceptors, bean);
-                return proxy;
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return bean;
-        }
-        return bean;
-
     }
 
     protected Object createProxy(Class<?> beanClass, String beanName, List<Object> specificInterceptors, Object target) {
@@ -84,22 +102,24 @@ public class CustomAutoProxyCreator implements BeanPostProcessor{
 
     /**
      * 获取当前Bean上面的通知
+     *
      * @param beanClass
      * @param beanName
      * @param target
      * @return
      */
-    protected  List<Object> getAdvicesAndAdvisorsForBean(Class<?> beanClass, String beanName, Object target) throws Exception {
+    @SneakyThrows
+    protected List<Object> getAdvicesAndAdvisorsForBean(Class<?> beanClass, String beanName, Object target) {
         // 源码中通过pointCut表达式解析匹配实现，太复杂，这里简化处理
         String pointCut = config.getProperty("pointCut")
-                .replaceAll("\\.","\\\\.")
-                .replaceAll("\\\\.\\*",".*")
-                .replaceAll("\\(","\\\\(")
-                .replaceAll("\\)","\\\\)");
+                .replaceAll("\\.", "\\\\.")
+                .replaceAll("\\\\.\\*", ".*")
+                .replaceAll("\\(", "\\\\(")
+                .replaceAll("\\)", "\\\\)");
 
         Class<?> targetClass = target.getClass();
         //玩正则
-        String pointCutForClassRegex = pointCut.substring(0,pointCut.lastIndexOf("\\(") - 4);
+        String pointCutForClassRegex = pointCut.substring(0, pointCut.lastIndexOf("\\(") - 4);
         pointCutClassPattern = Pattern.compile("class " + pointCutForClassRegex.substring(
                 pointCutForClassRegex.lastIndexOf(" ") + 1));
         // 切点表达式没有匹配到当前对象，返回null
@@ -123,16 +143,16 @@ public class CustomAutoProxyCreator implements BeanPostProcessor{
                 methodString = methodString.substring(0, methodString.lastIndexOf("throws")).trim();
             }
             Matcher matcher = pattern.matcher(methodString);
-            if(matcher.matches()){
+            if (matcher.matches()) {
                 //把每一个方法包装成 MethodIterceptor
                 //before
-                if(StringUtils.isNotBlank(aspectBefore)) {
+                if (StringUtils.isNotBlank(aspectBefore)) {
                     //创建一个Advivce
                     MethodBeforeAdvice methodBeforeAdvice = new MethodBeforeAdvice(aspectInstance, aspectClass.getMethod(aspectBefore, null));
                     advisors.add(new MethodBeforeAdviceInterceptor(methodBeforeAdvice));
                 }
                 //before
-                if(StringUtils.isNotBlank(aspectAfterReturning)) {
+                if (StringUtils.isNotBlank(aspectAfterReturning)) {
                     //创建一个Advivce
                     AfterReturningAdvice afterReturningAdvice = new AfterReturningAdvice(aspectInstance, aspectClass.getMethod(aspectBefore, null));
                     advisors.add(new AfterReturningAdviceInterceptor(afterReturningAdvice));

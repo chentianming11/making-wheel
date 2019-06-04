@@ -13,14 +13,12 @@ public class AfterReturningAdvice extends AbstractAdvice {
         super(aspectObject, aspectMethod);
     }
 
+
+    @Override
     public void afterReturning(Object retVal, Method method, Object[] arguments, Object target) throws Throwable {
         aspectMethod.invoke(aspectObject, null);
     }
 
-    @Override
-    public void before(Method method, Object[] args, Object target) throws Throwable {
-
-    }
 
     @Override
     public boolean isBeforeAdvice() {

@@ -20,7 +20,13 @@ public abstract class AbstractAdvice implements Advice{
         this.aspectMethod = aspectMethod;
     }
 
-    public abstract void before(Method method, Object[] args, Object target) throws Throwable;
+    public void before(Method method, Object[] args, Object target) throws Throwable {
+
+    };
+
+    public void afterReturning(Object retVal, Method method, Object[] arguments, Object target) throws Throwable {
+
+    }
 
     public abstract boolean isBeforeAdvice();
 

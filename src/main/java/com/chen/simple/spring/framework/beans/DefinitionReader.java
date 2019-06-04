@@ -3,6 +3,7 @@ package com.chen.simple.spring.framework.beans;
 import com.chen.simple.spring.framework.annotation.Controller;
 import com.chen.simple.spring.framework.annotation.Service;
 import lombok.Data;
+import org.apache.commons.lang3.ClassUtils;
 import strman.Strman;
 
 import java.io.File;
@@ -68,12 +69,12 @@ public class DefinitionReader {
                 BeanDefinition beanDefinition = new BeanDefinition()
                         .setFactoryBeanName(beanName)
                         .setBeanClassName(className);
-                // 所有的接口类型设置别名
-                Class<?>[] interfaces = clz.getInterfaces();
-                if (interfaces.length > 0) {
-                    List<String> alias = new ArrayList<>();
-                    for (Class<?> anInterface : interfaces) {
-                        alias.add(Strman.lowerFirst(anInterface.getSimpleName()));
+                // 所有接口类型名称设置为别名
+                List<Class<?>> allInterfaces = ClassUtils.getAllInterfaces(clz);
+                List<String> alias = new ArrayList<>();
+                if (!allInterfaces.isEmpty()) {
+                    for (Class<?> interClz : allInterfaces) {
+                        alias.add(Strman.lowerFirst(interClz.getSimpleName()));
                     }
                     beanDefinition.setAlias(alias);
                 }

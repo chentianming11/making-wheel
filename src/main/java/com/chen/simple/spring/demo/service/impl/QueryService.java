@@ -1,6 +1,7 @@
 package com.chen.simple.spring.demo.service.impl;
 
 import com.chen.simple.spring.demo.service.IQueryService;
+import com.chen.simple.spring.framework.annotation.Autowired;
 import com.chen.simple.spring.framework.annotation.Service;
 
 import java.util.HashMap;
@@ -15,6 +16,9 @@ import java.util.UUID;
 @Service
 public class QueryService implements IQueryService {
 
+	@Autowired
+	TestServiceA testServiceA;
+
 	/**
 	 * 查询
 	 */
@@ -24,6 +28,10 @@ public class QueryService implements IQueryService {
 		map.put("name", name);
 		map.put("data", "查出来的数据");
 		map.put("token", UUID.randomUUID().toString());
+
+		System.out.println("A  B 互相注入测试");
+		testServiceA.methodA();
+
 		return map;
 	}
 

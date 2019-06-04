@@ -6,6 +6,7 @@ import com.chen.simple.spring.framework.beans.BeanDefinitionRegistry;
 import com.chen.simple.spring.framework.beans.BeanWrapper;
 import com.chen.simple.spring.framework.beans.factory.config.BeanPostProcessor;
 import com.chen.simple.spring.framework.beans.factory.config.Scope;
+import com.chen.simple.spring.framework.beans.factory.config.SmartInstantiationAwareBeanPostProcessor;
 import lombok.Getter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -26,7 +27,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date 2019/5/12
  */
 @Getter
-public class DefaultListableBeanFactory implements BeanDefinitionRegistry , BeanFactory{
+public class DefaultListableBeanFactory implements BeanDefinitionRegistry, BeanFactory {
 
     /**
      * 存储注册信息的BeanDefinition
@@ -35,7 +36,9 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry , Bean
     private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
 
 
-    /** BeanPostProcessors to apply in createBean */
+    /**
+     * BeanPostProcessors to apply in createBean
+     */
     private final List<BeanPostProcessor> beanPostProcessors = new ArrayList<>();
 
     private final Map<String, Scope> scopes = new LinkedHashMap<>(8);
@@ -45,6 +48,7 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry , Bean
 
     /**
      * 添加Bean后置处理器
+     *
      * @param beanPostProcessor
      */
     public void addBeanPostProcessor(BeanPostProcessor beanPostProcessor) {
@@ -98,7 +102,7 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry , Bean
                 //这里使用了一个匿名内部类，创建Bean实例对象，并且注册给所依赖的对象
                 sharedInstance = getSingleton(beanName, () -> {
                     //创建一个指定Bean实例对象，如果有父级继承，则合并子类和父类的定义
-                    return createBean(beanName, mbd);
+                    return createBean(mbd);
                 });
                 //获取给定Bean的实例对象
                 bean = sharedInstance;
@@ -107,7 +111,7 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry , Bean
             else if (mbd.isPrototype()) {
                 // It's a prototype -> create a new instance.
                 //原型模式(Prototype)是每次都会创建一个新的对象
-                bean = createBean(beanName, mbd);
+                bean = createBean(mbd);
             }
 
             //要创建的Bean既不是单例模式，也不是原型模式，则根据Bean定义资源中
@@ -120,7 +124,7 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry , Bean
                 if (scope == null) {
                     throw new IllegalStateException("No Scope registered for scope name '" + scopeName + "'");
                 }
-                bean = scope.get(beanName, () -> createBean(beanName, mbd));
+                bean = scope.get(beanName, () -> createBean(mbd));
             }
 
         }
@@ -137,8 +141,8 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry , Bean
         return singletonFactory.getObject();
     }
 
-    private Object createBean(String beanName, BeanDefinition mbd) {
-        // TODO: 2019/6/2 注入代理对象失败
+    private Object createBean(BeanDefinition mbd) {
+        String beanName = mbd.getFactoryBeanName();
         //封装被创建的Bean对象
         BeanWrapper instanceWrapper = createBeanInstance(beanName, mbd);
         final Object bean = instanceWrapper.getWrappedInstance();
@@ -148,11 +152,10 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry , Bean
             // 别名也存一份
             List<String> alias = mbd.getAlias();
             if (alias != null) {
-                for (String alia : alias) {
-                    singletonObjects.put(alia, bean);
+                for (String ali : alias) {
+                    singletonObjects.put(ali, bean);
                 }
             }
-
         }
         Object exposedObject = bean;
         //DI注入 将Bean实例对象封装，并且Bean定义中配置的属性值赋值给实例对象
@@ -161,6 +164,7 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry , Bean
         exposedObject = initializeBean(beanName, exposedObject, mbd);
         return exposedObject;
     }
+
 
     /**
      * 初始容器创建的Bean实例对象，为其添加BeanPostProcessor后置处理器
@@ -275,7 +279,9 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry , Bean
             for (Field field : fields) {
                 Class<?> fieldType = field.getType();
                 Object bean = getBean(fieldType);
-                FieldUtils.writeField(field, instanceWrapper.getWrappedInstance(), bean, true);
+                Object instance = instanceWrapper.getWrappedInstance();
+                field.setAccessible(true);
+                field.set(instance, bean);
             }
         } catch (IllegalAccessException e) {
             e.printStackTrace();
@@ -289,14 +295,34 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry , Bean
         try {
             String beanClassName = mbd.getBeanClassName();
             Class<?> clz = Class.forName(beanClassName);
-            Object instance = ConstructorUtils.invokeConstructor(clz);
-            beanWrapper = new BeanWrapper(instance);
+            Object bean = ConstructorUtils.invokeConstructor(clz);
+            Object exposedObject = getEarlyBeanReference(beanName, mbd, bean);
+            beanWrapper = new BeanWrapper(exposedObject);
         } catch (Exception e) {
             e.printStackTrace();
         }
         return beanWrapper;
     }
 
+
+    /**
+     * Obtain a reference for early access to the specified bean,
+     * typically for the purpose of resolving a circular reference.
+     * @param beanName the name of the bean (for error handling purposes)
+     * @param mbd the merged bean definition for the bean
+     * @param bean the raw bean instance
+     * @return the object to expose as bean reference
+     */
+    private Object getEarlyBeanReference(String beanName, BeanDefinition mbd, Object bean) {
+        Object exposedObject = bean;
+        for (BeanPostProcessor bp : getBeanPostProcessors()) {
+            if (bp instanceof SmartInstantiationAwareBeanPostProcessor) {
+                SmartInstantiationAwareBeanPostProcessor ibp = (SmartInstantiationAwareBeanPostProcessor) bp;
+                exposedObject = ibp.getEarlyBeanReference(exposedObject, beanName);
+            }
+        }
+        return exposedObject;
+    }
 
 
     @Override
