@@ -16,11 +16,11 @@ public class TestServiceA {
 
 
     public void methodA() {
-        System.out.println("methodA");
+        System.out.println("TestServiceA => methodA");
+        testServiceB.methodA();
     }
 
     public void methodB() {
-        System.out.println("methodB");
-        testServiceB.methodB();
+        System.out.println("TestServiceA => methodB");
     }
 }

@@ -4,8 +4,6 @@ package com.chen.simple.spring.demo.aspect;
  * @author 陈添明
  * @date 2019/5/19
  */
-//@Service
-//@Aspect
 public class LogAspect {
 
 

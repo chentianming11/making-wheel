@@ -16,8 +16,8 @@ public class TestServiceB {
     
 
     public void methodA() {
-        testServiceA.methodA();
         System.out.println("TestServiceB ==> methodA");
+        testServiceA.methodB();
     }
 
     public void methodB() {

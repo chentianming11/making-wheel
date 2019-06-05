@@ -154,7 +154,7 @@ public class CustomAutoProxyCreator implements SmartInstantiationAwareBeanPostPr
                 //before
                 if (StringUtils.isNotBlank(aspectAfterReturning)) {
                     //创建一个Advivce
-                    AfterReturningAdvice afterReturningAdvice = new AfterReturningAdvice(aspectInstance, aspectClass.getMethod(aspectBefore, null));
+                    AfterReturningAdvice afterReturningAdvice = new AfterReturningAdvice(aspectInstance, aspectClass.getMethod(aspectAfterReturning, null));
                     advisors.add(new AfterReturningAdviceInterceptor(afterReturningAdvice));
                 }
             }

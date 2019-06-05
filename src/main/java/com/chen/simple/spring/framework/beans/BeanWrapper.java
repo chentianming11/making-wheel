@@ -12,13 +12,17 @@ public class BeanWrapper {
         this.wrappedInstance = wrappedInstance;
     }
 
+    /**
+     * 返回包装对象
+     * @return
+     */
     public Object getWrappedInstance() {
         return this.wrappedInstance;
     }
 
     /**
-     * 返回代理以后的 Class
-     * 可能会是这个 $Proxy0
+     * 返回包装后的 Class
+     * 可能会是这个
      *
      * @return
      */

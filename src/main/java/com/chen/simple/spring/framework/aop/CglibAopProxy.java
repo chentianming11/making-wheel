@@ -33,4 +33,14 @@ public class CglibAopProxy implements AopProxy {
     public Object getProxy(ClassLoader classLoader) {
         return null;
     }
+
+    /**
+     * 获取代理对象
+     *
+     * @return
+     */
+    @Override
+    public Object getTarget() {
+        return null;
+    }
 }

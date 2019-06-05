@@ -14,6 +14,6 @@ public class ProxyFactory extends AdvisedSupport {
      * @return
      */
     public Object getProxy() {
-        return new JdkDynamicAopProxy(this);
+        return new JdkDynamicAopProxy(this).getProxy();
     }
 }

@@ -1,6 +1,7 @@
 package com.chen.simple.spring.framework.beans.factory;
 
 import com.chen.simple.spring.framework.annotation.Autowired;
+import com.chen.simple.spring.framework.aop.AopProxy;
 import com.chen.simple.spring.framework.beans.BeanDefinition;
 import com.chen.simple.spring.framework.beans.BeanDefinitionRegistry;
 import com.chen.simple.spring.framework.beans.BeanWrapper;
@@ -16,6 +17,7 @@ import org.apache.commons.lang3.reflect.MethodUtils;
 import strman.Strman;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -271,15 +273,23 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry, BeanF
      */
     private void populateBean(String beanName, BeanDefinition mbd, BeanWrapper instanceWrapper) {
         try {
-            Class<?> wrappedClass = instanceWrapper.getWrappedClass();
-            Field[] fields = FieldUtils.getFieldsWithAnnotation(wrappedClass, Autowired.class);
+            Class<?> beanClass = instanceWrapper.getWrappedClass();
+            Object instance = instanceWrapper.getWrappedInstance();
+            // 注入这里直接通过反射简单处理
+            if (Proxy.isProxyClass(beanClass)) {
+                // 当前bean是代理对象
+                AopProxy aopProxy = (AopProxy) Proxy.getInvocationHandler(instance);
+                instance = aopProxy.getTarget();
+                beanClass = instance.getClass();
+            }
+
+            Field[] fields = FieldUtils.getFieldsWithAnnotation(beanClass, Autowired.class);
             if (ArrayUtils.isEmpty(fields)) {
                 return;
             }
             for (Field field : fields) {
                 Class<?> fieldType = field.getType();
                 Object bean = getBean(fieldType);
-                Object instance = instanceWrapper.getWrappedInstance();
                 field.setAccessible(true);
                 field.set(instance, bean);
             }

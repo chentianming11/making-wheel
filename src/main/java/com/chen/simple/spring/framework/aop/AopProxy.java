@@ -23,4 +23,11 @@ public interface AopProxy {
 	 */
 	Object getProxy(ClassLoader classLoader);
 
+
+	/**
+	 * 获取代理对象
+	 * @return
+	 */
+	Object getTarget();
+
 }
