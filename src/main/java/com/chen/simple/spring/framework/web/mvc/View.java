@@ -49,7 +49,7 @@ public class View {
                     if (null == paramValue) {
                         continue;
                     }
-                    //要把#{}中间的这个字符串给取出来
+                    // 要把#{}中间的这个字符串给取出来
                     line = matcher.replaceFirst(makeStringForRegExp(paramValue.toString()));
                     matcher = pattern.matcher(line);
                 }
