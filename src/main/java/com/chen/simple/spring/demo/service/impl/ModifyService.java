@@ -1,7 +1,7 @@
 package com.chen.simple.spring.demo.service.impl;
 
 import com.chen.simple.spring.demo.service.IModifyService;
-import com.chen.simple.spring.framework.annotation.Service;
+import com.chen.simple.spring.framework.spring.annotation.Service;
 
 import java.util.HashMap;
 import java.util.Map;

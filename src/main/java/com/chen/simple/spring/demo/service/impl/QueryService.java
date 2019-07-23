@@ -1,8 +1,8 @@
 package com.chen.simple.spring.demo.service.impl;
 
 import com.chen.simple.spring.demo.service.IQueryService;
-import com.chen.simple.spring.framework.annotation.Autowired;
-import com.chen.simple.spring.framework.annotation.Service;
+import com.chen.simple.spring.framework.spring.annotation.Autowired;
+import com.chen.simple.spring.framework.spring.annotation.Service;
 
 import java.util.HashMap;
 import java.util.Map;

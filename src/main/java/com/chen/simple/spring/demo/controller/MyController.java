@@ -3,8 +3,8 @@ package com.chen.simple.spring.demo.controller;
 import com.chen.simple.spring.demo.controller.resp.Result;
 import com.chen.simple.spring.demo.service.IModifyService;
 import com.chen.simple.spring.demo.service.IQueryService;
-import com.chen.simple.spring.framework.annotation.*;
-import com.chen.simple.spring.framework.web.mvc.ModelAndView;
+import com.chen.simple.spring.framework.spring.annotation.*;
+import com.chen.simple.spring.framework.spring.web.mvc.ModelAndView;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
