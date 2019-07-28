@@ -110,6 +110,21 @@
       <version>1.2.12</version>
     </dependency>
 
+    <!--mysql-->
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.21</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.mchange</groupId>
+      <artifactId>c3p0</artifactId>
+      <version>0.9.2.1</version>
+    </dependency>
+
+
+
     <!--log-->
     <dependency>
       <groupId>ch.qos.logback</groupId>
