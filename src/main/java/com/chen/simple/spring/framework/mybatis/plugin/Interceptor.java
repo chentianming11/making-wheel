@@ -1,5 +1,5 @@
-/**
- *    Copyright 2009-2016 the original author or authors.
+/*
+ *    Copyright 2009-2012 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -13,25 +13,23 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.chen.simple.spring.framework.mybatis.executor.statement;
+package com.chen.simple.spring.framework.mybatis.plugin;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.List;
 
 /**
  * @author Clinton Begin
  */
-public interface StatementHandler {
 
-  <E> List<E> query(Statement statement) throws SQLException;
+/**
+ * 拦截器
+ *
+ */
+public interface Interceptor {
 
+  //拦截
+  Object intercept(Invocation invocation) throws Throwable;
 
-    Statement prepare(Connection connection) throws SQLException;
+  //插入
+  Object plugin(Object target);
 
-  void parameterize(Statement statement) throws SQLException;
-
-
-  String getSql();
 }

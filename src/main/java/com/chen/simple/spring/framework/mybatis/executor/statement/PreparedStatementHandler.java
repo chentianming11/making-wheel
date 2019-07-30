@@ -31,6 +31,9 @@ public class PreparedStatementHandler implements StatementHandler {
     protected final MappedStatement mappedStatement;
     protected final RowBounds rowBounds;
 
+    protected final String sql;
+
+
 
     public PreparedStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds) {
         this.executor = executor;
@@ -40,6 +43,7 @@ public class PreparedStatementHandler implements StatementHandler {
 
         this.parameterHandler = configuration.newParameterHandler(mappedStatement, parameterObject);
         this.resultSetHandler = configuration.newResultSetHandler(executor, mappedStatement, rowBounds, parameterHandler);
+        this.sql = mappedStatement.getSql();
     }
 
     @Override
@@ -92,5 +96,10 @@ public class PreparedStatementHandler implements StatementHandler {
     @Override
     public void parameterize(Statement statement) throws SQLException {
         parameterHandler.setParameters((PreparedStatement) statement);
+    }
+
+    @Override
+    public String getSql() {
+        return sql;
     }
 }

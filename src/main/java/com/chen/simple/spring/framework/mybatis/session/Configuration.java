@@ -6,9 +6,12 @@ import com.chen.simple.spring.framework.mybatis.executor.result.ResultSetHandler
 import com.chen.simple.spring.framework.mybatis.executor.statement.PreparedStatementHandler;
 import com.chen.simple.spring.framework.mybatis.executor.statement.StatementHandler;
 import com.chen.simple.spring.framework.mybatis.mapping.MappedStatement;
+import com.chen.simple.spring.framework.mybatis.plugin.Interceptor;
+import com.chen.simple.spring.framework.mybatis.plugin.InterceptorChain;
 import com.chen.simple.spring.framework.mybatis.util.PropertiesUtils;
 import com.google.common.base.Splitter;
 import lombok.Data;
+import org.apache.commons.lang3.ClassUtils;
 
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +32,11 @@ public class Configuration {
 
     protected boolean cacheEnabled = true;
 
+    /**
+     * 拦截器链
+     */
+    protected final InterceptorChain interceptorChain = new InterceptorChain();
+
 
     /**
      * 维护sql映射文件关联关系
@@ -46,6 +54,23 @@ public class Configuration {
     }
 
     /**
+     * 获取拦截器集合
+     * @return
+     */
+    public List<Interceptor> getInterceptors() {
+        return interceptorChain.getInterceptors();
+    }
+
+    /**
+     * 添加拦截器
+     * @param interceptor
+     */
+    public void addInterceptor(Interceptor interceptor) {
+        interceptorChain.addInterceptor(interceptor);
+    }
+
+
+    /**
      * 根据statement ID获取SQL
      * @param id
      * @return
@@ -57,8 +82,7 @@ public class Configuration {
 
     public StatementHandler newStatementHandler(Executor executor, MappedStatement mappedStatement, Object parameterObject, RowBounds rowBounds) {
         StatementHandler statementHandler = new PreparedStatementHandler(executor, mappedStatement, parameterObject, rowBounds);
-        // TODO: 2019/7/27 织入插件
-//        statementHandler = (StatementHandler) interceptorChain.pluginAll(statementHandler);
+        statementHandler = (StatementHandler) interceptorChain.pluginAll(statementHandler);
         return statementHandler;
     }
 
@@ -70,7 +94,28 @@ public class Configuration {
      */
     public Configuration(Properties properties) {
         this.properties = properties;
+        // 解析映射的Statement
         parseMappedStatement();
+        // 解析插件配置
+        parsePlugin();
+
+    }
+
+    /**
+     * 解析插件配置
+     */
+    private void parsePlugin() {
+        String plugins = properties.getProperty("plugins");
+        List<String> pluginList = Splitter.on(",").splitToList(plugins);
+        pluginList.forEach(pluginClassName -> {
+            try {
+                Class<?> pluginClass = ClassUtils.getClass(pluginClassName);
+                Interceptor interceptor = (Interceptor) pluginClass.newInstance();
+                addInterceptor(interceptor);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     /**
@@ -116,8 +161,8 @@ public class Configuration {
         if (cacheEnabled) {
             executor = new CachingExecutor(executor);
         }
-        // TODO: 2019/7/27 拦截器
-//        executor = (Executor) interceptorChain.pluginAll(executor);
+        // 织入插件
+        executor = (Executor) interceptorChain.pluginAll(executor);
         return executor;
     }
 
@@ -128,9 +173,9 @@ public class Configuration {
      * @return
      */
     public ParameterHandler newParameterHandler(MappedStatement mappedStatement, Object parameterObject) {
-        DefaultParameterHandler parameterHandler = new DefaultParameterHandler(mappedStatement, parameterObject);
-        // TODO: 2019/7/27 参数处理插件
-//        parameterHandler = (ParameterHandler) interceptorChain.pluginAll(parameterHandler);
+        ParameterHandler parameterHandler = new DefaultParameterHandler(mappedStatement, parameterObject);
+        // 织入插件
+        parameterHandler = (ParameterHandler) interceptorChain.pluginAll(parameterHandler);
         return parameterHandler;
     }
 
@@ -144,8 +189,8 @@ public class Configuration {
      */
     public ResultSetHandler newResultSetHandler(Executor executor, MappedStatement mappedStatement, RowBounds rowBounds, ParameterHandler parameterHandler) {
         ResultSetHandler resultSetHandler = new DefaultResultSetHandler(executor, mappedStatement, parameterHandler, rowBounds);
-        // TODO: 2019/7/27 结果集处理插件
-//        resultSetHandler = (ResultSetHandler) interceptorChain.pluginAll(resultSetHandler);
+        // 织入插件
+        resultSetHandler = (ResultSetHandler) interceptorChain.pluginAll(resultSetHandler);
         return resultSetHandler;
     }
 }

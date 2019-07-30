@@ -1,5 +1,5 @@
-/**
- *    Copyright 2009-2016 the original author or authors.
+/*
+ *    Copyright 2009-2012 the original author or authors.
  *
  *    Licensed under the Apache License, Version 2.0 (the "License");
  *    you may not use this file except in compliance with the License.
@@ -13,25 +13,27 @@
  *    See the License for the specific language governing permissions and
  *    limitations under the License.
  */
-package com.chen.simple.spring.framework.mybatis.executor.statement;
+package com.chen.simple.spring.framework.mybatis.plugin;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.List;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * @author Clinton Begin
  */
-public interface StatementHandler {
 
-  <E> List<E> query(Statement statement) throws SQLException;
+/**
+ * 签名
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface Signature {
+  //就是定义哪些类，方法，参数需要被拦截
+  Class<?> type();
 
+  String method();
 
-    Statement prepare(Connection connection) throws SQLException;
-
-  void parameterize(Statement statement) throws SQLException;
-
-
-  String getSql();
+  Class<?>[] args();
 }

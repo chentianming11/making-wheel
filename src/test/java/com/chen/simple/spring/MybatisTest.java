@@ -21,7 +21,7 @@ public class MybatisTest {
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build("mybatis/config/mybatis.properties");
         SqlSession session = sqlSessionFactory.openSession();
         BlogMapper mapper = session.getMapper(BlogMapper.class);
-        Blog blog = mapper.selectBlogById(1688);
+        Blog blog = mapper.selectBlogById(1);
         System.out.println(blog);
     }
 
@@ -29,7 +29,7 @@ public class MybatisTest {
     public void test2() {
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build("mybatis/config/mybatis.properties");
         SqlSession session = sqlSessionFactory.openSession();
-        Blog blog = session.selectOne("com.chen.simple.spring.demo.mapper.BlogMapper.selectBlogById", 1L);
+        Blog blog = session.selectOne("com.chen.simple.spring.demo.mapper.BlogMapper.selectBlogById", 1);
         System.out.println(blog);
     }
 }
