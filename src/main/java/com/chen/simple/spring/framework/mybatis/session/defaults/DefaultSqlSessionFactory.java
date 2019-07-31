@@ -1,5 +1,6 @@
 package com.chen.simple.spring.framework.mybatis.session.defaults;
 
+import com.chen.simple.spring.framework.mybatis.executor.CachingExecutor;
 import com.chen.simple.spring.framework.mybatis.executor.Executor;
 import com.chen.simple.spring.framework.mybatis.session.Configuration;
 import com.chen.simple.spring.framework.mybatis.session.SqlSession;
@@ -19,6 +20,8 @@ public class DefaultSqlSessionFactory implements SqlSessionFactory {
 
     @Override
     public SqlSession openSession() {
+        // 每次openSession的时候移除一下二级缓存
+        CachingExecutor.remoceCache();
         final Executor executor = configuration.newExecutor();
         return new DefaultSqlSession(configuration, executor);
     }

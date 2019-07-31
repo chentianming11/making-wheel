@@ -85,7 +85,19 @@ public class DefaultSqlSession implements SqlSession {
 
     @Override
     public <T> T getMapper(Class<T> type) {
-        return null;
+        //最后会去调用MapperRegistry.getMapper
+        return configuration.<T>getMapper(type, this);
+    }
+
+    /**
+     * Retrieves current configuration
+     * 得到配置
+     *
+     * @return Configuration
+     */
+    @Override
+    public Configuration getConfiguration() {
+        return configuration;
     }
 
     public static class StrictMap<V> extends HashMap<String, V> {

@@ -23,6 +23,9 @@ public class MybatisTest {
         BlogMapper mapper = session.getMapper(BlogMapper.class);
         Blog blog = mapper.selectBlogById(1);
         System.out.println(blog);
+        System.out.println("=============");
+        Blog blog2 = mapper.selectBlogById(1);
+        System.out.println(blog2);
     }
 
     @Test
@@ -31,5 +34,10 @@ public class MybatisTest {
         SqlSession session = sqlSessionFactory.openSession();
         Blog blog = session.selectOne("com.chen.simple.spring.demo.mapper.BlogMapper.selectBlogById", 1);
         System.out.println(blog);
+
+        System.out.println("=============");
+        SqlSession session2 = sqlSessionFactory.openSession();
+        Blog blog2 = session2.selectOne("com.chen.simple.spring.demo.mapper.BlogMapper.selectBlogById", 1);
+        System.out.println(blog2);
     }
 }

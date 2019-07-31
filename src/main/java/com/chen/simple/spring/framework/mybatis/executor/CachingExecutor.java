@@ -50,4 +50,9 @@ public class CachingExecutor implements Executor {
         cacheKey.update(parameter);
         return cacheKey;
     }
+
+
+    public static void remoceCache() {
+        cache.clear();
+    }
 }

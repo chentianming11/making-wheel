@@ -10,5 +10,5 @@ public interface BlogMapper {
      * @param bid
      * @return
      */
-    public Blog selectBlogById(Integer bid);
+    Blog selectBlogById(Integer bid);
 }

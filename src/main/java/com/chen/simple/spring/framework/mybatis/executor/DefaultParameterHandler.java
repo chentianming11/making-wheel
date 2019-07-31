@@ -46,12 +46,12 @@ public class DefaultParameterHandler implements ParameterHandler {
      */
     @Override
     public void setParameters(PreparedStatement preparedStatement) throws SQLException {
-        Class<?> aClass = parameterObject.getClass();
-        if (aClass.equals(String.class) || aClass.equals(Integer.class) || aClass.equals(Long.class)) {
+        Class<?> parameterObjectClass = parameterObject.getClass();
+        if (String.class.isAssignableFrom(parameterObjectClass) || Number.class.isAssignableFrom(parameterObjectClass)) {
             // 基本数据类型或者string
-            TypeHandler typeHandler = typeHandlerRegistry.getTypeHandler(aClass);
+            TypeHandler typeHandler = typeHandlerRegistry.getTypeHandler(parameterObjectClass);
             typeHandler.setParameter(preparedStatement, 1, parameterObject, null);
-        } else if (aClass.equals(Map.class)) {
+        } else if (Map.class.isAssignableFrom(parameterObjectClass)) {
             Map map = (Map) parameterObject;
             // 简单随便处理一下
             map.forEach((key, value) -> {

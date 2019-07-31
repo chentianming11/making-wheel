@@ -8,4 +8,8 @@ public class BindingException extends RuntimeException {
     public BindingException(String s) {
         super(s);
     }
+
+    public BindingException(String s, Exception e) {
+        super(s, e);
+    }
 }

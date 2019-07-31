@@ -6,6 +6,7 @@ import com.chen.simple.spring.framework.mybatis.executor.result.ResultSetHandler
 import com.chen.simple.spring.framework.mybatis.executor.statement.PreparedStatementHandler;
 import com.chen.simple.spring.framework.mybatis.executor.statement.StatementHandler;
 import com.chen.simple.spring.framework.mybatis.mapping.MappedStatement;
+import com.chen.simple.spring.framework.mybatis.mapping.MapperRegistry;
 import com.chen.simple.spring.framework.mybatis.plugin.Interceptor;
 import com.chen.simple.spring.framework.mybatis.plugin.InterceptorChain;
 import com.chen.simple.spring.framework.mybatis.util.PropertiesUtils;
@@ -31,6 +32,11 @@ public class Configuration {
     public Properties properties;
 
     protected boolean cacheEnabled = true;
+
+    /**
+     * 映射注册中心
+     */
+    protected MapperRegistry mapperRegistry = new MapperRegistry(this);
 
     /**
      * 拦截器链
@@ -70,6 +76,35 @@ public class Configuration {
     }
 
 
+    /***
+     * 获取Mapper代理对象
+     * @param type
+     * @param sqlSession
+     * @param <T>
+     * @return
+     */
+    public <T> T getMapper(Class<T> type, SqlSession sqlSession) {
+        return mapperRegistry.getMapper(type, sqlSession);
+    }
+
+    /**
+     * 将包下的所有映射器接口添加到Mapper注册中心
+     * @param packageName
+     */
+    public void addMappers(String packageName) {
+        mapperRegistry.addMappers(packageName);
+    }
+
+    /**
+     * 将制定映射器接口添加到Mapper注册中心
+     * @param type
+     * @param <T>
+     */
+    public <T> void addMapper(Class<T> type) {
+        mapperRegistry.addMapper(type);
+    }
+
+
     /**
      * 根据statement ID获取SQL
      * @param id
@@ -94,15 +129,27 @@ public class Configuration {
      */
     public Configuration(Properties properties) {
         this.properties = properties;
+        // 设置配置项参数 这里省略
+
+        // 解析插件配置 将配置的插件添加到拦截器链
+        parsePlugin();
         // 解析映射的Statement
         parseMappedStatement();
-        // 解析插件配置
-        parsePlugin();
-
+        // 解析映射器接口 将mapper接口添加到Mapper注册中心
+        parseMappers();
     }
 
     /**
-     * 解析插件配置
+     * 解析映射器接口  将mapper接口添加到Mapper注册中心
+     */
+    private void parseMappers() {
+        String mapperPackages = properties.getProperty("mapper.package");
+        List<String> mapperPackageList = Splitter.on(",").splitToList(mapperPackages);
+        mapperPackageList.forEach(this::addMappers);
+    }
+
+    /**
+     * 解析插件配置  将配置的插件添加到拦截器链
      */
     private void parsePlugin() {
         String plugins = properties.getProperty("plugins");
