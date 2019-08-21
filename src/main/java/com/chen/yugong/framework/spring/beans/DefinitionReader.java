@@ -2,13 +2,12 @@ package com.chen.yugong.framework.spring.beans;
 
 import com.chen.yugong.framework.spring.annotation.Controller;
 import com.chen.yugong.framework.spring.annotation.Service;
+import com.chen.yugong.framework.spring.util.ScannerUtils;
 import lombok.Data;
 import org.apache.commons.lang3.ClassUtils;
 import strman.Strman;
 
-import java.io.File;
 import java.io.InputStream;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -40,7 +39,7 @@ public class DefinitionReader {
                 .getResourceAsStream(location.replace("classpath:", ""))) {
             config.load(is);
             // 扫描包
-            doScanner(config.getProperty(SCAN_PACKAGE));
+            classNames = ScannerUtils.scanner(config.getProperty(SCAN_PACKAGE));
             // 加载Bean定义
             int count = doLoadBeanDefinitions();
             return count;
@@ -68,7 +67,8 @@ public class DefinitionReader {
 
                 BeanDefinition beanDefinition = new BeanDefinition()
                         .setFactoryBeanName(beanName)
-                        .setBeanClassName(className);
+                        .setSourceBeanClass(clz)
+                        .setBeanClass(clz);
                 // 所有接口类型名称设置为别名
                 List<Class<?>> allInterfaces = ClassUtils.getAllInterfaces(clz);
                 List<String> alias = new ArrayList<>();
@@ -87,25 +87,5 @@ public class DefinitionReader {
         return 0;
     }
 
-    /**
-     * 包扫描
-     *
-     * @param scanPackage
-     */
-    private void doScanner(String scanPackage) {
-        URL resource = this.getClass().getClassLoader().getResource("/" + scanPackage.replaceAll("\\.", "/"));
-        File scanDir = new File(resource.getPath());
-        File[] files = scanDir.listFiles();
-        for (File file : files) {
-            if (file.isDirectory()) {
-                // 是目录 递归扫描
-                doScanner(scanPackage + "." + file.getName());
-            } else {
-                if (!file.getName().endsWith(".class")) {
-                    continue;
-                }
-                classNames.add(scanPackage + "." + file.getName().replaceAll("\\.class", ""));
-            }
-        }
-    }
+
 }

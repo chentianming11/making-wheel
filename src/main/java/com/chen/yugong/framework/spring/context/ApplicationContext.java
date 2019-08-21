@@ -29,6 +29,26 @@ public class ApplicationContext extends AbstractApplicationContext {
     }
 
     /**
+     * 为容器的某些子类指定特殊的BeanPost事件处理器
+     *
+     * @param beanFactory
+     */
+    @Override
+    protected void postProcessBeanFactory(DefaultListableBeanFactory beanFactory) {
+
+    }
+
+    /**
+     * 调用所有注册的BeanFactoryPostProcessor的Bean
+     *
+     * @param beanFactory
+     */
+    @Override
+    protected void invokeBeanFactoryPostProcessors(DefaultListableBeanFactory beanFactory) {
+        PostProcessorRegistrationDelegate.invokeBeanFactoryPostProcessors(beanFactory, getBeanFactoryPostProcessors());
+    }
+
+    /**
      * 注册Bean后置处理器
      * @param beanFactory
      */
@@ -90,9 +110,10 @@ public class ApplicationContext extends AbstractApplicationContext {
         return (T) bean;
     }
 
-
-
-
+    @Override
+    public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons) {
+        return beanFactory.getBeanNamesForType(type, includeNonSingletons);
+    }
 
 
 }

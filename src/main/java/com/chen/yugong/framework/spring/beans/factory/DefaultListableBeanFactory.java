@@ -1,10 +1,13 @@
 package com.chen.yugong.framework.spring.beans.factory;
 
+import com.chen.yugong.framework.mybatis.spring.MapperFactoryBean;
+import com.chen.yugong.framework.mybatis.spring.SqlSessionFactoryBean;
 import com.chen.yugong.framework.spring.annotation.Autowired;
 import com.chen.yugong.framework.spring.aop.AopProxy;
 import com.chen.yugong.framework.spring.beans.BeanDefinition;
 import com.chen.yugong.framework.spring.beans.BeanDefinitionRegistry;
 import com.chen.yugong.framework.spring.beans.BeanWrapper;
+import com.chen.yugong.framework.spring.beans.FactoryBean;
 import com.chen.yugong.framework.spring.beans.factory.config.BeanPostProcessor;
 import com.chen.yugong.framework.spring.beans.factory.config.Scope;
 import com.chen.yugong.framework.spring.beans.factory.config.SmartInstantiationAwareBeanPostProcessor;
@@ -18,10 +21,7 @@ import strman.Strman;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -34,7 +34,6 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry, BeanF
     /**
      * 存储注册信息的BeanDefinition
      */
-
     private final Map<String, BeanDefinition> beanDefinitionMap = new ConcurrentHashMap<>(256);
 
 
@@ -60,19 +59,25 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry, BeanF
     @Override
     public void registerBeanDefinition(String beanName, BeanDefinition beanDefinition) {
         beanDefinitionMap.put(beanName, beanDefinition);
-        // 以别名也存一份
-        List<String> alias = beanDefinition.getAlias();
-        if (alias == null) {
-            return;
-        }
-        for (String alia : alias) {
-            beanDefinitionMap.put(alia, beanDefinition);
-        }
     }
 
     @Override
     public BeanDefinition getBeanDefinition(String beanName) {
-        return beanDefinitionMap.get(beanName);
+        BeanDefinition beanDefinition = beanDefinitionMap.get(beanName);
+        if (beanDefinition != null) {
+            return beanDefinition;
+        }
+
+        Set<Map.Entry<String, BeanDefinition>> entries = beanDefinitionMap.entrySet();
+        for (Map.Entry<String, BeanDefinition> entry : entries) {
+            BeanDefinition bd = entry.getValue();
+            List<String> alias = bd.getAlias();
+            if (alias.contains(beanName)) {
+                return bd;
+            }
+        }
+        return null;
+
     }
 
     @Override
@@ -164,6 +169,27 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry, BeanF
         populateBean(beanName, mbd, instanceWrapper);
         // 初始化Bean
         exposedObject = initializeBean(beanName, exposedObject, mbd);
+
+        // 如果是工厂Bean，返回getObject()
+        if (exposedObject instanceof FactoryBean) {
+            try {
+
+                /**
+                 * 特殊处理，置入mybatis配置Bean的属性
+                 * 没办法，要不然还得把配置化Bean的高级装配实现一遍，太麻烦了
+                 */
+                if (exposedObject instanceof MapperFactoryBean) {
+                    MapperFactoryBean mapperFactoryBean = (MapperFactoryBean) exposedObject;
+                    mapperFactoryBean.setMapperInterface(mbd.getSourceBeanClass());
+                    SqlSessionFactoryBean sqlSessionFactoryBean = getBean(SqlSessionFactoryBean.class);
+                    mapperFactoryBean.setSqlSessionFactory(sqlSessionFactoryBean.getObject());
+                }
+
+                return ((FactoryBean) exposedObject).getObject();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
         return exposedObject;
     }
 
@@ -303,8 +329,7 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry, BeanF
     private BeanWrapper createBeanInstance(String beanName, BeanDefinition mbd) {
         BeanWrapper beanWrapper = null;
         try {
-            String beanClassName = mbd.getBeanClassName();
-            Class<?> clz = Class.forName(beanClassName);
+            Class<?> clz = mbd.getBeanClass();
             Object bean = ConstructorUtils.invokeConstructor(clz);
             Object exposedObject = getEarlyBeanReference(beanName, mbd, bean);
             beanWrapper = new BeanWrapper(exposedObject);
@@ -340,5 +365,22 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry, BeanF
         String simpleName = clz.getSimpleName();
         Object bean = getBean(Strman.lowerFirst(simpleName));
         return (T) bean;
+    }
+
+    @Override
+    public String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons) {
+        List<String> names = new ArrayList<>();
+        beanDefinitionMap.forEach((beanName, beanDefinition) -> {
+            Class<?> beanClass = beanDefinition.getBeanClass();
+            if (!type.isAssignableFrom(beanClass)) {
+                return;
+            }
+            boolean singleton = beanDefinition.isSingleton();
+            if (!includeNonSingletons && singleton) {
+                return;
+            }
+            names.add(beanName);
+        });
+        return names.toArray(new String[names.size()]);
     }
 }

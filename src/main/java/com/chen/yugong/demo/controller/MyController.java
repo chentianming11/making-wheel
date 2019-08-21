@@ -1,6 +1,7 @@
 package com.chen.yugong.demo.controller;
 
 import com.chen.yugong.demo.controller.resp.Result;
+import com.chen.yugong.demo.entity.Blog;
 import com.chen.yugong.demo.service.IModifyService;
 import com.chen.yugong.demo.service.IQueryService;
 import com.chen.yugong.framework.spring.annotation.*;
@@ -50,6 +51,18 @@ public class MyController {
     public Result add(@RequestParam("name") String name, @RequestParam("addr") String addr) {
         Map<String, Object> result = modifyService.add(name, addr);
         return Result.ok(result);
+    }
+
+
+    /**
+     * 通过Json对象
+     * @return
+     */
+    @RequestMapping("/queryBlog")
+    @ResponseBody
+    public Result add(@RequestParam("id") Integer id) {
+        Blog blog = queryService.queryBlog(id);
+        return Result.ok(blog);
     }
 
 

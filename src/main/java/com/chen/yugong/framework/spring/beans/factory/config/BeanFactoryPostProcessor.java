@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,29 +16,15 @@
 
 package com.chen.yugong.framework.spring.beans.factory.config;
 
-public interface InstantiationAwareBeanPostProcessor extends BeanPostProcessor {
+import com.chen.yugong.framework.spring.beans.factory.DefaultListableBeanFactory;
 
-
-	/**
-	 * bean实例化之前回调
-	 * @param beanClass
-	 * @param beanName
-	 * @return
-	 */
-	default Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName)  {
-		return null;
-	}
-
+@FunctionalInterface
+public interface BeanFactoryPostProcessor {
 
 	/**
-	 * bean实例化之后回调
-	 * @param bean
-	 * @param beanName
-	 * @return
+	 * ﻿在标准初始化之后修改应用程序上下文的内部bean工厂。 此时所有bean定义都已经加载完成，但尚未实例化任何bean。 这允许覆盖或添加属性，甚至是初始化bean。
+	 * @param beanFactory
 	 */
-	default boolean postProcessAfterInstantiation(Object bean, String beanName) {
-		return true;
-	}
-
+	void postProcessBeanFactory(DefaultListableBeanFactory beanFactory);
 
 }

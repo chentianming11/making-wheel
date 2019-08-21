@@ -19,13 +19,15 @@ public class BeanDefinition {
 
     private static final String SCOPE_PROTOTYPE = "prototype";
 
-    private String beanClassName;
+    private Class<?> beanClass;
 
     private String factoryBeanName;
 
     private boolean lazyInit = false;
 
     private List<String> alias;
+
+    private Class<?> sourceBeanClass;
 
     /**
      * this bean definition is 'synthetic', that is,

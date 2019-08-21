@@ -1,5 +1,5 @@
 /*
- * Copyright 2002-2017 the original author or authors.
+ * Copyright 2002-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,31 +14,16 @@
  * limitations under the License.
  */
 
-package com.chen.yugong.framework.spring.beans.factory.config;
-
-public interface InstantiationAwareBeanPostProcessor extends BeanPostProcessor {
+package com.chen.yugong.framework.spring.beans;
 
 
-	/**
-	 * bean实例化之前回调
-	 * @param beanClass
-	 * @param beanName
-	 * @return
-	 */
-	default Object postProcessBeforeInstantiation(Class<?> beanClass, String beanName)  {
-		return null;
-	}
+import com.chen.yugong.framework.spring.beans.factory.config.BeanFactoryPostProcessor;
 
+public interface BeanDefinitionRegistryPostProcessor extends BeanFactoryPostProcessor {
 
 	/**
-	 * bean实例化之后回调
-	 * @param bean
-	 * @param beanName
-	 * @return
+	 * 后置执行BeanDefinition注册
+	 * @param registry
 	 */
-	default boolean postProcessAfterInstantiation(Object bean, String beanName) {
-		return true;
-	}
-
-
+	void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry);
 }

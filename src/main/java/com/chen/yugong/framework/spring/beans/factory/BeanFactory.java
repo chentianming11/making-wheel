@@ -18,4 +18,7 @@ public interface BeanFactory {
 
     <T> T getBean(Class<T> clz);
 
+
+    String[] getBeanNamesForType(Class<?> type, boolean includeNonSingletons);
+
 }

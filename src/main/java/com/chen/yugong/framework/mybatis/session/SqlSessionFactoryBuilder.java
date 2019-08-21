@@ -35,4 +35,15 @@ public class SqlSessionFactoryBuilder {
         Configuration configuration = new Configuration(properties);
             return build(configuration);
     }
+
+    /**
+     *
+     * @return
+     */
+    @SneakyThrows
+    public SqlSessionFactory build(Properties properties) {
+        // 根据配置文件创建Configuration对象
+        Configuration configuration = new Configuration(properties);
+        return build(configuration);
+    }
 }

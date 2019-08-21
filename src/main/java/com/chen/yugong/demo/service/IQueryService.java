@@ -1,5 +1,7 @@
 package com.chen.yugong.demo.service;
 
+import com.chen.yugong.demo.entity.Blog;
+
 import java.util.Map;
 
 /**
@@ -12,4 +14,6 @@ public interface IQueryService {
 	 * 查询
 	 */
 	Map<String, Object> query(String name);
+
+	Blog queryBlog(Integer id);
 }
