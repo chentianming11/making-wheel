@@ -1,5 +1,6 @@
 package com.chen.yugong.framework.spring.beans.factory;
 
+import com.chen.yugong.framework.mybatis.session.SqlSessionFactory;
 import com.chen.yugong.framework.mybatis.spring.MapperFactoryBean;
 import com.chen.yugong.framework.mybatis.spring.SqlSessionFactoryBean;
 import com.chen.yugong.framework.spring.annotation.Autowired;
@@ -72,7 +73,7 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry, BeanF
         for (Map.Entry<String, BeanDefinition> entry : entries) {
             BeanDefinition bd = entry.getValue();
             List<String> alias = bd.getAlias();
-            if (alias.contains(beanName)) {
+            if (alias != null && alias.contains(beanName)) {
                 return bd;
             }
         }
@@ -181,8 +182,8 @@ public class DefaultListableBeanFactory implements BeanDefinitionRegistry, BeanF
                 if (exposedObject instanceof MapperFactoryBean) {
                     MapperFactoryBean mapperFactoryBean = (MapperFactoryBean) exposedObject;
                     mapperFactoryBean.setMapperInterface(mbd.getSourceBeanClass());
-                    SqlSessionFactoryBean sqlSessionFactoryBean = getBean(SqlSessionFactoryBean.class);
-                    mapperFactoryBean.setSqlSessionFactory(sqlSessionFactoryBean.getObject());
+                    SqlSessionFactory sessionFactory =(SqlSessionFactory)getBean(SqlSessionFactoryBean.class);
+                    mapperFactoryBean.setSqlSessionFactory(sessionFactory);
                 }
 
                 return ((FactoryBean) exposedObject).getObject();

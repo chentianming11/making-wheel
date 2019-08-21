@@ -12,10 +12,6 @@ public class MapperFactoryBean<T> extends SqlSessionDaoSupport implements Factor
 
     private Class<T> mapperInterface;
 
-    public MapperFactoryBean(Class<T> mapperInterface) {
-        this.mapperInterface = mapperInterface;
-    }
-
     /**
      * {@inheritDoc}
      */
