@@ -1,4 +1,4 @@
-# yugong 愚公
+# making.wheel 手动造轮子
 
-仿写springIOC、DI、AOP和MVC实现
+手写springIOC、DI、AOP和MVC实现
 手写mybatis实现

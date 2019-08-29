@@ -7,7 +7,7 @@
 
   <servlet>
     <servlet-name>mvc</servlet-name>
-    <servlet-class>com.chen.yugong.framework.spring.web.servlet.DispatcherServlet</servlet-class>
+    <servlet-class>com.chen.making.wheel.framework.spring.web.servlet.DispatcherServlet</servlet-class>
     <init-param>
       <param-name>contextConfigLocation</param-name>
       <param-value>classpath:application.properties</param-value>
