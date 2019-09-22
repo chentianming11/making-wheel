@@ -24,7 +24,4 @@ public class ModifyService implements IModifyService {
 		map.put("addr",addr);
 		return map;
 	}
-
-
-	
 }
