@@ -1,10 +1,6 @@
 package com.chen.making.wheel.framework.tomcat.bio.http;
 
-import org.apache.commons.io.IOUtils;
-
-import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.Charset;
 
 /**
  * @author 陈添明
@@ -18,15 +14,18 @@ public class Request {
 
     public Request(InputStream inputStream) {
         try {
-            String content = IOUtils.toString(inputStream, Charset.defaultCharset());
             System.out.println("--------------------------");
+            byte[] buffer = new byte[1024];
+            StringBuilder content = new StringBuilder();
+            int len = inputStream.read(buffer);
+            content.append(new String(buffer, 0, len));
             System.out.println(content);
             System.out.println("--------------------------");
-            String line = content.split("\\n")[0];
+            String line = content.toString().split("\\n")[0];
             String[] arr = line.split("\\s");
             method = arr[0];
             url = arr[1].split("\\?")[0];
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
 

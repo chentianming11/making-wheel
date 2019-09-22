@@ -58,6 +58,7 @@ public class TomcatBIO {
             System.out.println("tomcat已经启动，启动端口：" + port);
             while (true) {
                 Socket client = serverSocket.accept();
+                System.out.println("有一个新的客户端连接了。。。");
                 process(client);
             }
         } catch (Exception e) {
@@ -78,9 +79,9 @@ public class TomcatBIO {
         } else {
             response.write("404 not found!");
         }
+        inputStream.close();
         outputStream.flush();
         outputStream.close();
-        inputStream.close();
         client.close();
     }
 
